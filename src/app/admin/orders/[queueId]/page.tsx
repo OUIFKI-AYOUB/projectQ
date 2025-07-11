@@ -2,11 +2,14 @@ import db from "@/lib/db/db";
 import QueueForm from "./components/queue-form";
 
 
-const QueuePage = async ({
-  params
-}: {
-  params: { queueId: string }
-}) => {
+
+interface QueuePageProps {
+  params: {
+    queueId: string;
+  };
+}
+
+const QueuePage = async ({ params }: QueuePageProps) => {
   const queue = await db.queue.findUnique({
     where: {
       id: parseInt(params.queueId)
