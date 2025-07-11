@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS Queue (
+  id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  number INTEGER NOT NULL,
+  userId TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'waiting',
+  username TEXT NOT NULL UNIQUE,
+  createdAt TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Enable real-time for Queue table
+ALTER PUBLICATION supabase_realtime ADD TABLE Queue;
