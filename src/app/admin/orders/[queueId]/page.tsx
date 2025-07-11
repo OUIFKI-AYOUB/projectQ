@@ -1,18 +1,22 @@
 import db from "@/lib/db/db";
 import QueueForm from "./components/queue-form";
 
-type Props = {
+const QueuePage = async ({
+  params,
+}: {
   params: {
     queueId: string;
   };
-};
-
-const QueuePage = async ({ params }: Props) => {
+}) => {
   const queue = await db.queue.findUnique({
     where: {
       id: parseInt(params.queueId),
     },
   });
+
+  if (!queue) {
+    return <div>Queue not found</div>;
+  }
 
   return (
     <div className="flex-col">
