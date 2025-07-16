@@ -1,5 +1,4 @@
 "use client";
-
 import { Heading } from "@/components/ui/heading";
 import { Separator } from "@/components/ui/separator";
 import { QueueColumn, createColumns } from "./columns";
@@ -29,20 +28,17 @@ import {
 import QueueForm from "../[queueId]/components/queue-form";
 import { useLanguage } from "../../../../../context/LanguageContext";
 import { translate } from "../../../../../utils/translations";
-
-interface QueueClientProps {
-  data: QueueColumn[];
-}
-
-export const QueueClient: React.FC<QueueClientProps> = ({ data }) => {
+import { useQueue } from "@/app/QueueContext";
+export const QueueClient: React.FC = () => {
   const [open, setOpen] = useState(false);
   const { locale } = useLanguage();
+  const { queues, clearAllQueues } = useQueue();
 
   const handleDeleteAll = async () => {
     try {
       await axios.delete("/api/queues/all");
+      clearAllQueues(); // Update local state instead of reloading
       toast.success(translate(locale, "queueDeleted"));
-      window.location.reload();
     } catch (error) {
       toast.error(translate(locale, "failedToDeleteAllQueues"));
     }
@@ -59,7 +55,7 @@ export const QueueClient: React.FC<QueueClientProps> = ({ data }) => {
             initialData={null}
             onSuccess={() => {
               setOpen(false);
-              window.location.reload();
+              // No need to reload - state is updated in QueueForm
             }}
           />
         </DialogContent>
@@ -67,7 +63,7 @@ export const QueueClient: React.FC<QueueClientProps> = ({ data }) => {
 
       <div className="flex items-center justify-between">
         <Heading
-          title={`${translate(locale, "queueSystem")} (${data.length})`}
+          title={`${translate(locale, "queueSystem")} (${queues.length})`}
           description={translate(locale, "manageQueueNumbers")}
         />
         <div className="flex gap-2">
@@ -79,7 +75,7 @@ export const QueueClient: React.FC<QueueClientProps> = ({ data }) => {
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive" disabled={data.length === 0}>
+              <Button variant="destructive" disabled={queues.length === 0}>
                 <Trash2 className="h-2 w-2 " />
               </Button>
             </AlertDialogTrigger>
@@ -90,7 +86,8 @@ export const QueueClient: React.FC<QueueClientProps> = ({ data }) => {
                   {translate(locale, "deleteAllDescription")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
-              <AlertDialogFooter      className={`flex ${locale === "ar" ? "flex-row-reverse" : "flex-row"} gap-2`}
+              <AlertDialogFooter
+                className={`flex ${locale === "ar" ? "flex-row-reverse" : "flex-row"} gap-2`}
               >
                 <AlertDialogCancel>{translate(locale, "cancel")}</AlertDialogCancel>
                 <AlertDialogAction onClick={handleDeleteAll} className="bg-red-600  hover:bg-white hover:text-red-600">
@@ -102,7 +99,7 @@ export const QueueClient: React.FC<QueueClientProps> = ({ data }) => {
         </div>
       </div>
       <Separator />
-      <DataTable columns={createColumns(locale)} data={data} />
+      <DataTable columns={createColumns(locale)} data={queues} />
     </>
   );
 };

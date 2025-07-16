@@ -1,12 +1,10 @@
 "use client"
-
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Heading } from "@/components/ui/heading";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Queue } from "@prisma/client";
 import { Trash } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -15,10 +13,10 @@ import * as z from "zod";
 import axios from "axios";
 import { useParams, useRouter } from "next/navigation";
 import { AlertModal } from "@/components/alert-modal";
-
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useLanguage } from "../../../../../../context/LanguageContext";
 import { translate } from "../../../../../../utils/translations";
+import { useQueue } from "@/app/QueueContext";
 
 const formSchema = z.object({
   number: z.number().min(1),
@@ -37,6 +35,7 @@ interface QueueFormProps {
   } | null;
   onSuccess?: () => void;
 }
+
 const QueueForm: React.FC<QueueFormProps> = ({
   initialData,
   onSuccess
@@ -44,8 +43,7 @@ const QueueForm: React.FC<QueueFormProps> = ({
   const params = useParams();
   const router = useRouter();
   const { locale } = useLanguage();
-
-
+  const { updateQueue, addQueue, removeQueue } = useQueue();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -67,13 +65,28 @@ const QueueForm: React.FC<QueueFormProps> = ({
     try {
       setLoading(true);
       if (initialData) {
-        await axios.patch(`/api/queues/actions`, {
+        const response = await axios.patch(`/api/queues/actions`, {
           queueId: initialData.id,
           ...data
         });
+        
+        // Update local state instead of reloading
+        updateQueue(initialData.id, {
+          ...initialData,
+          ...data,
+          username: data.username || null
+        });
+        
         toast.success(toastMessage);
       } else {
-        await axios.post('/api/queues', data);
+        const response = await axios.post('/api/queues', data);
+        
+        // Add to local state instead of reloading
+        addQueue({
+          ...response.data,
+          createdAt: new Date().toISOString()
+        });
+        
         toast.success(toastMessage);
       }
       onSuccess?.();
@@ -88,8 +101,13 @@ const QueueForm: React.FC<QueueFormProps> = ({
     try {
       setLoading(true);
       await axios.delete(`/api/queues/${params.queueId}`);
+      
+      // Remove from local state instead of reloading
+      if (initialData) {
+        removeQueue(initialData.id);
+      }
+      
       router.push('/queues');
-      router.refresh();
       toast.success(translate(locale, "queueDeleted"));
     } catch (error) {
       toast.error(translate(locale, "somethingWentWrong"));
@@ -113,7 +131,6 @@ const QueueForm: React.FC<QueueFormProps> = ({
           title={title}
           description={description}
         />
-
       </div>
       
       <Separator />
@@ -128,11 +145,11 @@ const QueueForm: React.FC<QueueFormProps> = ({
                 <FormItem>
                   <FormLabel>{translate(locale, "queueNumber")}</FormLabel>
                   <FormControl>
-                    <Input 
+                    <Input
                       type="number"
-                      disabled={loading} 
+                      disabled={loading}
                       placeholder={translate(locale, "enterQueueNumber")}
-                      {...field} 
+                      {...field}
                       onChange={e => field.onChange(parseInt(e.target.value) || 0)}
                       className="focus:ring-2 focus:ring-blue-500"
                     />
@@ -149,11 +166,11 @@ const QueueForm: React.FC<QueueFormProps> = ({
                 <FormItem>
                   <FormLabel>{translate(locale, "username")}</FormLabel>
                   <FormControl>
-                    <Input 
-                      disabled={loading} 
+                    <Input
+                      disabled={loading}
                       placeholder={translate(locale, "enterUsername")}
                       {...field}
-                      className="focus:ring-2 focus:ring-blue-500" 
+                      className="focus:ring-2 focus:ring-blue-500"
                     />
                   </FormControl>
                   <FormMessage />
@@ -167,18 +184,18 @@ const QueueForm: React.FC<QueueFormProps> = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{translate(locale, "status")}</FormLabel>
-                  <Select 
+                  <Select
                     disabled={loading}
                     onValueChange={field.onChange}
                     value={field.value}
                   >
                     <SelectTrigger className="focus:ring-2 focus:ring-blue-500">
-                    <SelectValue placeholder={translate(locale, "selectQueueStatus")} />
+                      <SelectValue placeholder={translate(locale, "selectQueueStatus")} />
                     </SelectTrigger>
                     <SelectContent>
-                    <SelectItem value="waiting">{translate(locale, "waiting")}</SelectItem>
-                    <SelectItem value="served">{translate(locale, "served")}</SelectItem>
-                    <SelectItem value="skipped">{translate(locale, "skipped")}</SelectItem>
+                      <SelectItem value="waiting">{translate(locale, "waiting")}</SelectItem>
+                      <SelectItem value="served">{translate(locale, "served")}</SelectItem>
+                      <SelectItem value="skipped">{translate(locale, "skipped")}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -186,7 +203,7 @@ const QueueForm: React.FC<QueueFormProps> = ({
               )}
             />
           </div>
-  
+          
           <div className="flex justify-end gap-4">
             <Button
               type="button"
@@ -195,20 +212,19 @@ const QueueForm: React.FC<QueueFormProps> = ({
               onClick={() => onSuccess?.()}
             >
               {translate(locale, "cancel")}
-              </Button>
-            <Button 
+            </Button>
+            <Button
               type="submit"
               disabled={loading}
               className="bg-blue-600 hover:bg-blue-700"
             >
               {loading ? translate(locale, "saving") : action}
-              </Button>
+            </Button>
           </div>
         </form>
       </Form>
     </div>
   );
-  
 };
 
 export default QueueForm;

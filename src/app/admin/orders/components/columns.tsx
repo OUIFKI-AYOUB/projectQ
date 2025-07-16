@@ -19,6 +19,7 @@ import {
 import QueueForm from "../[queueId]/components/queue-form";
 import { translate } from "../../../../../utils/translations";
 import { useLanguage } from "../../../../../context/LanguageContext";
+import { useQueue } from "@/app/QueueContext";
 
 export type QueueColumn = {
   id: number;
@@ -66,7 +67,6 @@ export const createColumns = (locale: string): ColumnDef<QueueColumn>[] => [
       </div>
     ),
   },
-
   {
     id: "actions",
     header: () => (
@@ -76,9 +76,10 @@ export const createColumns = (locale: string): ColumnDef<QueueColumn>[] => [
     ),
     cell: ({ row }) => {
       const queue = row.original;
-      const [open, setOpen] = useState(false); // State for edit dialog
-      const [deleteDialogOpen, setDeleteDialogOpen] = useState(false); // State for delete confirmation dialog
+      const [open, setOpen] = useState(false);
+      const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
       const { locale } = useLanguage();
+      const { updateQueue, removeQueue } = useQueue();
 
       const handleSkip = async () => {
         try {
@@ -86,8 +87,10 @@ export const createColumns = (locale: string): ColumnDef<QueueColumn>[] => [
             queueId: queue.id,
             action: "skip",
           });
+          
+          // Update local state instead of reloading
+          updateQueue(queue.id, { ...queue, status: "skipped" });
           toast.success(translate(locale, "queueSkipped"));
-          window.location.reload();
         } catch (error) {
           toast.error(translate(locale, "failedToSkipQueue"));
         }
@@ -99,8 +102,10 @@ export const createColumns = (locale: string): ColumnDef<QueueColumn>[] => [
             queueId: queue.id,
             action: "unskip",
           });
+          
+          // Update local state instead of reloading
+          updateQueue(queue.id, { ...queue, status: "waiting" });
           toast.success(translate(locale, "queueUnskipped"));
-          window.location.reload();
         } catch (error) {
           toast.error(translate(locale, "failedToUnskipQueue"));
         }
@@ -111,8 +116,11 @@ export const createColumns = (locale: string): ColumnDef<QueueColumn>[] => [
           await axios.delete("/api/queues", {
             params: { queueId: queue.id },
           });
+          
+          // Remove from local state instead of reloading
+          removeQueue(queue.id);
           toast.success(translate(locale, "queueDeleted"));
-          window.location.reload();
+          setDeleteDialogOpen(false);
         } catch (error) {
           toast.error(translate(locale, "failedToDeleteQueue"));
         }
@@ -129,7 +137,7 @@ export const createColumns = (locale: string): ColumnDef<QueueColumn>[] => [
                 initialData={queue}
                 onSuccess={() => {
                   setOpen(false);
-                  window.location.reload();
+                  // No need to reload - state is updated in QueueForm
                 }}
               />
             </DialogContent>
@@ -161,7 +169,8 @@ export const createColumns = (locale: string): ColumnDef<QueueColumn>[] => [
                     {translate(locale, "deleteQueueDescription")}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter     className={`flex ${locale === "ar" ? "flex-row-reverse" : "flex-row"} gap-2`}
+                <AlertDialogFooter
+                  className={`flex ${locale === "ar" ? "flex-row-reverse" : "flex-row"} gap-2`}
                 >
                   <AlertDialogCancel>{translate(locale, "cancel")}</AlertDialogCancel>
                   <AlertDialogAction onClick={handleDelete} className="bg-red-600  hover:bg-white hover:text-red-600">
