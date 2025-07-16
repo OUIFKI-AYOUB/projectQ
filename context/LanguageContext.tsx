@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
@@ -10,13 +10,20 @@ type LanguageContextType = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Check localStorage for the saved locale, default to 'ar' if not found
-  const storedLocale = localStorage.getItem('locale') || 'ar';
-  const [locale, setLocale] = useState(storedLocale);
+  // Initialize with default value, will be updated in useEffect
+  const [locale, setLocale] = useState('ar');
+
+  useEffect(() => {
+    // This only runs on client side after hydration
+    const storedLocale = localStorage.getItem('locale') || 'ar';
+    setLocale(storedLocale);
+  }, []);
 
   // Update localStorage when the locale changes
   useEffect(() => {
-    localStorage.setItem('locale', locale);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('locale', locale);
+    }
   }, [locale]);
 
   return (
