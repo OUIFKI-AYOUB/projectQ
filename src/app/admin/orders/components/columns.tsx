@@ -16,10 +16,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import QueueForm from "../[queueId]/components/queue-form";
+
 import { translate } from "../../../../../utils/translations";
 import { useLanguage } from "../../../../../context/LanguageContext";
 import { useQueue } from "@/app/QueueContext";
+import QueueForm from "@/app/queue/[id]/components/queue-form";
 
 export type QueueColumn = {
   id: number;

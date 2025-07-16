@@ -14,9 +14,9 @@ import axios from "axios";
 import { useParams, useRouter } from "next/navigation";
 import { AlertModal } from "@/components/alert-modal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useLanguage } from "../../../../../../context/LanguageContext";
-import { translate } from "../../../../../../utils/translations";
 import { useQueue } from "@/app/QueueContext";
+import { useLanguage } from "../../../../../context/LanguageContext";
+import { translate } from "../../../../../utils/translations";
 
 const formSchema = z.object({
   number: z.number().min(1),

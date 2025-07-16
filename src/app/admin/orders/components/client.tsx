@@ -25,7 +25,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
-import QueueForm from "../[queueId]/components/queue-form";
+import QueueForm from "@/app/queue/[id]/components/queue-form";
 import { useLanguage } from "../../../../../context/LanguageContext";
 import { translate } from "../../../../../utils/translations";
 import { useQueue } from "@/app/QueueContext";

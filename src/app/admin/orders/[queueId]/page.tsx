@@ -1,13 +1,12 @@
+import QueueForm from "@/app/queue/[id]/components/queue-form";
 import db from "@/lib/db/db";
-import QueueForm from "./components/queue-form";
-
-const QueuePage = async ({
-  params,
-}: {
+interface PageProps {
   params: {
-    queueId: string;
+    queueId: string;  // Also fixed - params is not a Promise
   };
-}) => {
+}
+
+const QueuePage = async ({ params }: PageProps) => {
   const queue = await db.queue.findUnique({
     where: {
       id: parseInt(params.queueId),
